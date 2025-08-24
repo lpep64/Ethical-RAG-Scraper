@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+env/
+venv/
+
+# Environment variables
+.env
+.env.*
+
+# Data files
+*.jsonl
+*_checkpoints.txt
+chroma_db/
+
+# Streamlit
+.streamlit/
+
+# VS Code
+.vscode/
+
+# Ollama
+ollama_models/
+
+# Misc
+.DS_Store
+Thumbs.db
