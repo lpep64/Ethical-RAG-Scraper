@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-st.title("Subreddit Q&A Expert")
+st.title("Unethical Reddit Scraper LLM")
 question = st.text_input("Enter your question:")
 if st.button("Submit"):
     if question.strip():
