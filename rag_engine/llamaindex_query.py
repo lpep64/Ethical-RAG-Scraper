@@ -9,7 +9,7 @@ from llama_index.core import Settings
 DB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../vector_db/chroma_db')
 
 # Configure LLM and embedding model
-Settings.llm = Ollama(model="mistral", request_timeout=120.0)
+Settings.llm = Ollama(model="mistral", request_timeout=3600.0)
 Settings.embed_model = HuggingFaceEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 # Connect to ChromaDB

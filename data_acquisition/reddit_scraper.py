@@ -4,6 +4,7 @@ import time
 import logging
 from dotenv import load_dotenv
 import praw
+from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Load environment variables
@@ -33,8 +34,14 @@ def save_checkpoint(submission_id, checkpoint_file):
     with open(checkpoint_file, 'a') as f:
         f.write(f"{submission_id}\n")
 
+import re
 def clean_text(text):
-    return text.replace('&amp;', '&').strip()
+    # Remove URLs, emojis, extra whitespace, and HTML entities
+    text = re.sub(r'http\S+', '', text)  # Remove URLs
+    text = re.sub(r'[\U00010000-\U0010ffff]', '', text)  # Remove emojis
+    text = text.replace('&amp;', '&')
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
 
 def process_submission(submission):
     data = {
@@ -53,6 +60,7 @@ def process_comment(comment):
     data = {
         "id": comment.id,
         "type": "comment",
+        "parent_id": comment.parent_id,
         "permalink": f"https://www.reddit.com{comment.permalink}",
         "author": str(comment.author),
         "created_utc": int(comment.created_utc),
@@ -61,36 +69,30 @@ def process_comment(comment):
     }
     return data
 
-
 def scrape_subreddit(subreddit_name):
-    subreddit_name = subreddit_name.strip()
-    if not subreddit_name:
-        return
-    output_file = os.path.join(BASE_DIR, f"{subreddit_name}_corpus.jsonl")
-    checkpoint_file = os.path.join(BASE_DIR, f"{subreddit_name}_checkpoints.txt")
-    checkpoints = load_checkpoints(checkpoint_file)
+    checkpoint_file = os.path.join(BASE_DIR, f"{subreddit_name}_checkpoint.txt")
+    output_file = os.path.join(BASE_DIR, f"{subreddit_name}_data.jsonl")
+    processed_ids = load_checkpoints(checkpoint_file)
     subreddit = reddit.subreddit(subreddit_name)
     count = 0
+
     with open(output_file, 'a', encoding='utf-8') as out_f:
-        for submission in subreddit.top(limit=100):
-            if submission.id in checkpoints:
-                logging.info(f"Skipping already processed submission: {submission.id}")
+        for submission in tqdm(subreddit.new(limit=100), desc=f"Scraping r/{subreddit_name}"):
+            if submission.id in processed_ids:
                 continue
-            try:
-                out_f.write(json.dumps(process_submission(submission)) + '\n')
-                submission.comments.replace_more(limit=None)
-                comments = [c for c in submission.comments.list() if hasattr(c, 'score')]
-                top_comments = sorted(comments, key=lambda c: c.score, reverse=True)[:10]
-                for comment in top_comments:
-                    out_f.write(json.dumps(process_comment(comment)) + '\n')
-                save_checkpoint(submission.id, checkpoint_file)
-                logging.info(f"Processed submission: {submission.id} in {subreddit_name}")
+            data = process_submission(submission)
+            out_f.write(json.dumps(data) + "\n")
+            save_checkpoint(submission.id, checkpoint_file)
+            count += 1
+            submission.comments.replace_more(limit=0)
+            for comment in submission.comments.list():
+                if comment.id in processed_ids:
+                    continue
+                comment_data = process_comment(comment)
+                out_f.write(json.dumps(comment_data) + "\n")
+                save_checkpoint(comment.id, checkpoint_file)
                 count += 1
-                time.sleep(0.5)  # Reduced sleep for faster scraping
-            except Exception as e:
-                logging.error(f"Error processing submission {submission.id}: {e}")
-                continue
-    logging.info(f"Finished scraping {subreddit_name}: {count} submissions processed.")
+    logging.info(f"Scraped {count} items from r/{subreddit_name}")
 
 def main():
     with ThreadPoolExecutor(max_workers=min(8, len(SUBREDDITS))) as executor:
