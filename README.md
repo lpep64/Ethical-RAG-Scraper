@@ -1,42 +1,95 @@
 # Ethical-RAG-Scraper
 
-A locally-hosted, citation-enabled Retrieval-Augmented Generation (RAG) system for extracting and answering questions from subreddit knowledge bases, with full source traceability.
-
-## Project Structure
-
-- `data_acquisition/`: Reddit scraping scripts and output corpus
-- `vector_db/`: ChromaDB setup and ingestion scripts
-- `rag_engine/`: LlamaIndex integration and query engine
-- `llm_server/`: Ollama setup and model management
-- `api/`: FastAPI backend
-- `ui/`: Streamlit frontend
-- `docs/`: Project plan, setup guides, architecture
-- `tests/`: Unit tests for all major modules
-
-## Quick Start
-
-1. Copy `.env.example` to `.env` and fill in your Reddit API credentials.
-2. Install Python dependencies:
-
-   ```powershell
-   pip install -r requirements.txt
-   ```
-3. Run the pipeline:
-
-   python data_acquisition/reddit_scraper.py
-
-   python vector_db/chroma_ingest.py
-
-   $env:PYTHONPATH="."; pytest tests/
-
-   uvicorn api.main:app --reload
-
-   streamlit run ui/app.py
-
-## Core Technologies
-
-- PRAW, sentence-transformers, ChromaDB, LlamaIndex, Ollama, FastAPI, Streamlit
+**A local-first, citation-enabled RAG system for ethical knowledge extraction from Reddit.**
 
 ---
 
-See `docs/Project_Plan.md` for the full architecture and implementation details.
+## Features
+
+- **Local-first:** All data and models run on your machine—no cloud dependencies.
+- **Citation-enabled:** Every answer includes source citations for transparency.
+- **Ethical scraping:** Only public subreddit data, with respect for Reddit’s API terms.
+- **Modular architecture:** Easily extendable to new data sources and models.
+
+---
+
+## Architecture Overview
+
+```mermaid
+flowchart TD
+    A[Reddit Scraper] --> B[ChromaDB Vector Store]
+    B --> C[FastAPI Backend]
+    C --> D[Streamlit Frontend]
+    C --> E["Local LLM (Ollama/LlamaIndex)"]
+```
+
+---
+
+## Technology Stack
+
+- **Python 3.8+**
+- **PRAW** (Reddit API)
+- **sentence-transformers** (Embeddings)
+- **ChromaDB** (Vector database)
+- **LlamaIndex** (RAG orchestration)
+- **Ollama** (Local LLM)
+- **FastAPI** (Backend API)
+- **Streamlit** (Frontend UI)
+- **Unsloth** (Optional model optimization)
+
+---
+
+## Setup and Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/yourusername/Ethical-RAG-Scraper.git
+   cd Ethical-RAG-Scraper
+   ```
+2. **Create a virtual environment:**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+   ```
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. **Configure environment variables:**
+   - Copy `.env.example` to `.env` and fill in your Reddit API credentials.
+5. **Run the application:**
+   - Scrape data:
+     ```bash
+     python data_acquisition/reddit/reddit_scraper.py
+     ```
+   - Start backend:
+     ```bash
+     uvicorn api.main:app --reload
+     ```
+   - Launch frontend:
+     ```bash
+     streamlit run ui/app.py
+     ```
+
+---
+
+## Usage
+
+- **Scrape subreddits:**
+  ```bash
+  python data_acquisition/reddit/reddit_scraper.py --topic "privacy"
+  ```
+- **Query the API:**
+  Send a POST request to `/query` with your question.
+
+---
+
+## Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## License
+
+See [LICENSE](LICENSE) for details.

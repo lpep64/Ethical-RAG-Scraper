@@ -7,6 +7,7 @@ import praw
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import argparse
+import re
 
 # Load environment variables
 load_dotenv()
@@ -15,7 +16,8 @@ CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 USER_AGENT = os.getenv('USER_AGENT')
 SUBREDDITS = os.getenv('SUBREDDITS', '').split(',')
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
+os.makedirs(DATA_DIR, exist_ok=True)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 
@@ -24,6 +26,12 @@ reddit = praw.Reddit(
     client_secret=CLIENT_SECRET,
     user_agent=USER_AGENT,
 )
+
+def get_output_file(subreddit_name):
+    return os.path.join(DATA_DIR, f"{subreddit_name}_data.jsonl")
+
+def get_checkpoint_file(subreddit_name):
+    return os.path.join(DATA_DIR, f"{subreddit_name}_checkpoint.txt")
 
 def load_checkpoints(checkpoint_file):
     if not os.path.exists(checkpoint_file):
@@ -35,9 +43,7 @@ def save_checkpoint(submission_id, checkpoint_file):
     with open(checkpoint_file, 'a') as f:
         f.write(f"{submission_id}\n")
 
-import re
 def clean_text(text):
-    # Remove URLs, emojis, extra whitespace, and HTML entities
     text = re.sub(r'http\S+', '', text)  # Remove URLs
     text = re.sub(r'[\U00010000-\U0010ffff]', '', text)  # Remove emojis
     text = text.replace('&amp;', '&')
@@ -71,22 +77,19 @@ def process_comment(comment):
     return data
 
 def scrape_subreddit(subreddit_name, topic=None):
-    checkpoint_file = os.path.join(BASE_DIR, f"{subreddit_name}_checkpoint.txt")
-    output_file = os.path.join(BASE_DIR, f"{subreddit_name}_data.jsonl")
+    checkpoint_file = get_checkpoint_file(subreddit_name)
+    output_file = get_output_file(subreddit_name)
     processed_ids = load_checkpoints(checkpoint_file)
     subreddit = reddit.subreddit(subreddit_name)
     count = 0
 
     with open(output_file, 'a', encoding='utf-8') as out_f:
         if topic:
-            # Search for topic in subreddit, retrieve up to 25 matching posts
             submissions = list(subreddit.search(topic, sort='relevance', limit=25))
             desc = f"Searching '{topic}' in r/{subreddit_name}"
         else:
-            # Get 50 top and 50 hot posts, deduplicated
             top_posts = list(subreddit.top(limit=50))
             hot_posts = list(subreddit.hot(limit=50))
-            # Use post ID to deduplicate
             seen = set()
             submissions = []
             for post in top_posts + hot_posts:
@@ -118,7 +121,7 @@ def main():
     topic = args.topic
 
     with ThreadPoolExecutor(max_workers=min(8, len(SUBREDDITS))) as executor:
-        futures = {executor.submit(scrape_subreddit, name, topic): name for name in SUBREDDITS if name.strip()}
+        futures = {executor.submit(scrape_subreddit, name.strip(), topic): name for name in SUBREDDITS if name.strip()}
         for future in as_completed(futures):
             subreddit_name = futures[future]
             try:

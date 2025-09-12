@@ -1,7 +1,7 @@
 
 python data_acquisition/reddit_scraper.py
 
-python data_acquisition/text_cleaning.py
+python data_acquisition/reddit_scraper.py --topic "privacy"
 
 python vector_db/chroma_ingest.py
 
@@ -9,4 +9,4 @@ $env:PYTHONPATH="."; pytest tests/
 
 uvicorn api.main:app --reload
 
-streamlit run ui/app.py
+streamlit run ui/app.py`
