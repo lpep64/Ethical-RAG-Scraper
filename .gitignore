@@ -13,7 +13,8 @@ venv/
 .env.*
 
 # Data files
-*.jsonl
+data_acquitsition/*.jsonl
+data_acquitsition/*.txt
 *_checkpoints.txt
 chroma_db/
 
