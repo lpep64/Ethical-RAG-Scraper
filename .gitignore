@@ -11,10 +11,11 @@ venv/
 # Environment variables
 .env
 .env.*
+!.env.example
 
 # Data files
-data_acquisition/*.jsonl
-data_acquisition/*.txt
+data_acquisition/**/*.jsonl
+data_acquisition/**/*.txt
 *_checkpoints.txt
 chroma_db/
 
