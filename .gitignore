@@ -30,3 +30,4 @@ ollama_models/
 # Misc
 .DS_Store
 Thumbs.db
+.nogit/
